@@ -1,5 +1,8 @@
+using JWTBasedAuth.Apis;
 using JWTBasedAuth.Apis.JWT;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 
@@ -11,7 +14,16 @@ builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-var key = "this is my test key for the demo";
+
+builder.Services.Configure<JwtConfig>(builder.Configuration.GetSection("JwtConfig"));
+
+builder.Services.AddDbContext<ApiDbContext>(options =>
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("DefaultConnection")
+    ));
+
+
+var key = builder.Configuration["JWTToken:SecretKey"];
 
 builder.Services.AddAuthentication(x => {
     x.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -27,6 +39,8 @@ builder.Services.AddAuthentication(x => {
             ValidateAudience = false
         };
 }) ;
+builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
+                       .AddEntityFrameworkStores<ApiDbContext>();
 
 builder.Services.AddSingleton<IJWTAutheticationManager>(new JWTAuthenticationManager(key));
 
